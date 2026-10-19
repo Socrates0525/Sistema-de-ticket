@@ -1,0 +1,287 @@
+{
+  "name": "Sistema-de-ticket",
+  "nodes": [
+    {
+      "parameters": {
+        "promptType": "=define",
+        "text": "={{ $json.message.text }}",
+        "options": {
+          "systemMessage": "[ROL]\nSos un agente de soporte que registra tickets. Recordás la conversación anterior.\n\n[COMPORTAMIENTO]\n1. Si el usuario solo saluda, preguntale cuál es el problema. No registres nada.\n2. Cuando en cualquier mensaje (aunque sea el segundo) el usuario te dé un problema + un contacto, DEBES usar la herramienta \"Registrar_Ticket_Soporte\".\n3. Completá los campos con lo que te dijo. Lo que falte = \"No informado\".\n4. Después de usar la herramienta, respondé con el resumen del ticket.\n\n[EJEMPLO]\n- \"Hola\" → \"Hola, ¿en qué te puedo ayudar?\"\n- \"Soy Pablo de Setlatam, tengo virus. Mi mail es pablo@setlatam.com\" → Usás la herramienta y después mandás el resumen."
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        384,
+        0
+      ],
+      "id": "0e5363a3-86c0-4ad4-8309-61218e4ff9d6",
+      "name": "AI Agent"
+    },
+    {
+      "parameters": {
+        "model": "openai/gpt-oss-safeguard-20b",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGroq",
+      "typeVersion": 1,
+      "position": [
+        256,
+        208
+      ],
+      "id": "358b2862-23c8-4438-b710-75297f1a1390",
+      "name": "Groq Chat Model",
+      "credentials": {
+        "groqApi": {
+          "id": "LPYsF4kNXgubr7r7",
+          "name": "Groq account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "updates": [
+          "message"
+        ],
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.telegramTrigger",
+      "typeVersion": 1.5,
+      "position": [
+        80,
+        0
+      ],
+      "id": "378097cb-fb5e-49e4-a8c8-7b96823d89d9",
+      "name": "Telegram Trigger",
+      "webhookId": "92df1f90-6ceb-4999-9179-9801566a43c3",
+      "credentials": {
+        "telegramApi": {
+          "id": "uaczBAZRG3unID2n",
+          "name": "Client1981bot"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $('Telegram Trigger').item.json.message.chat.id }}",
+        "text": "=Reporte de observaciones - Agente de triage de Soporte:\n{{ $json.output }}",
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        736,
+        0
+      ],
+      "id": "a95f9c2a-64a0-4e5f-b7f5-06c2c2949abc",
+      "name": "Respuesta telegram",
+      "webhookId": "19953419-9df7-4727-bb21-53243d5a9d60",
+      "credentials": {
+        "telegramApi": {
+          "id": "uaczBAZRG3unID2n",
+          "name": "Client1981bot"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "sessionIdType": "customKey",
+        "sessionKey": "={{ $json.message.chat.id }}"
+      },
+      "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
+      "typeVersion": 1.4,
+      "position": [
+        400,
+        208
+      ],
+      "id": "65d43ba3-fe72-4010-8dbc-976c4b90a296",
+      "name": "Simple Memory"
+    },
+    {
+      "parameters": {
+        "descriptionType": "manual",
+        "toolDescription": "Agrega una nueva fila en la hoja de tickets con los datos recopilados del usuario (Nombre, Contacto, Empresa, Categoría, Prioridad, Resumen y Próxima Acción). Úsala solo cuando ya tengas los datos del ticket.",
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "https://docs.google.com/spreadsheets/d/17WeRQg7mec7AC99zBfNsbrK8evgVcqjsRZdwZqReF8o/edit?gid=0#gid=0",
+          "mode": "url"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Hoja 1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/17WeRQg7mec7AC99zBfNsbrK8evgVcqjsRZdwZqReF8o/edit#gid=0"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Nombre": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Nombre', `Nombre real del usuario`, 'string') }}",
+            "Contacto": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Contacto', `Email o teléfono real`, 'string') }}",
+            "Empresa": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Empresa', `Nombre de la empresa`, 'string') }}",
+            "Categoria": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Categoria', `Tipo de problema`, 'string') }}",
+            "Prioridad": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Prioridad', `Alta, Media o Baja`, 'string') }}",
+            "Resumen": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Resumen', `Descripción real del problema`, 'string') }}",
+            "Próxima Acción": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Pr_xima_Acci_n', `Acción recomendada`, 'string') }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "Nombre",
+              "displayName": "Nombre",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Contacto",
+              "displayName": "Contacto",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Empresa",
+              "displayName": "Empresa",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Categoria",
+              "displayName": "Categoria",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Prioridad",
+              "displayName": "Prioridad",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Resumen",
+              "displayName": "Resumen",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Próxima Acción",
+              "displayName": "Próxima Acción",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheetsTool",
+      "typeVersion": 4.7,
+      "position": [
+        544,
+        208
+      ],
+      "id": "c7295ea6-200d-43d0-8a7c-ffc61d260cd0",
+      "name": "Registrar_Ticket_Soporte",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "5pxAuvJG9NKiNmeQ",
+          "name": "Google Sheets account"
+        }
+      },
+      "notes": "Agrega una nueva fila en la hoja de tickets con los datos recopilados del usuario (Nombre, Contacto, Empresa, Categoría, Prioridad, Resumen y Próxima Acción). Úsala solo cuando ya tengas los datos del ticket."
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Groq Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Telegram Trigger": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent": {
+      "main": [
+        [
+          {
+            "node": "Respuesta telegram",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Simple Memory": {
+      "ai_memory": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Registrar_Ticket_Soporte": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "2b36ac02-a7f0-4fa1-89c7-767b8349db55",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "ec972953f5008d3865c8eb1f7f17371e27b3e8c38b006e82d3897e4ee8e77b79"
+  },
+  "nodeGroups": [],
+  "id": "oeZKAKORTHLL4Fk0",
+  "tags": []
+}
